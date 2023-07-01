@@ -2,27 +2,27 @@ package kz.exchangeCourse.usdkzt.services;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.util.Scanner;
+
 
 public class CurrencyParserService {
+    private final Document doc = Jsoup.connect("https://nationalbank.kz/ru/exchangerates/ezhednevnye-oficialnye-rynochnye-kursy-valyut").get();
+    private final Elements els = doc.select("tbody");
+    private final Elements els2 = els.select("td:eq(3)");
+
+    public CurrencyParserService() throws IOException {
+    }
 
     private enum CurrLabel {
         USD, EUR, RUB, TRY, UAH;
     }
 
-    public static String getCurrency(String messageText) {
-        Scanner sc = new Scanner(System.in);
-
+    public String getCurrency(String messageText) {
         try {
             CurrLabel currLabel = CurrLabel.valueOf(messageText.toUpperCase());
-            Document doc = Jsoup.connect("https://nationalbank.kz/ru/exchangerates/ezhednevnye-oficialnye-rynochnye-kursy-valyut").get();
 
-            Elements els = doc.select("tbody");
-            Elements els2 = els.select("td:eq(3)");
 
             return switch (currLabel) {
                 case USD -> els2.get(10).text();
@@ -32,8 +32,6 @@ public class CurrencyParserService {
                 case UAH -> els2.get(31).text();
             };
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         } catch (IllegalArgumentException e){
             return "Incorrect currency";
         }

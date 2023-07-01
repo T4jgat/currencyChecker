@@ -2,6 +2,7 @@ package kz.exchangeCourse.usdkzt.telegramBot;
 
 import kz.exchangeCourse.usdkzt.services.CurrencyParserService;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -24,6 +25,7 @@ public class Bot extends TelegramLongPollingBot {
         return botConfig.getToken();
     }
 
+    @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
 
@@ -32,11 +34,12 @@ public class Bot extends TelegramLongPollingBot {
         if(update.hasMessage() && update.getMessage().hasText()){
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
+            CurrencyParserService currencyParserService = new CurrencyParserService();
 
             switch (messageText) {
                 case "/start" -> startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
                 default -> {
-                    currency = messageText.toUpperCase() + "/KZT:  " + CurrencyParserService.getCurrency(messageText);
+                    currency = messageText.toUpperCase() + "/KZT:  " + currencyParserService.getCurrency(messageText);
                     sendMessage(chatId, currency);
                 }
             }
@@ -62,4 +65,5 @@ public class Bot extends TelegramLongPollingBot {
 
         }
     }
+
 }
