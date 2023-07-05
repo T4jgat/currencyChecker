@@ -17,25 +17,6 @@ public class CurrencyParserService {
     public CurrencyParserService() throws IOException {
     }
 
-//    public String getCurrency(String messageText) {
-//        try {
-//            CurrLabel currLabel = CurrLabel.valueOf(messageText.toUpperCase());
-//
-//
-//            return switch (currLabel) {
-//                case USD -> currencyPair.get(10).text() + ":  " + values.get(10).text();
-//                case EUR -> currencyPair.get(11).text() + ":  " + values.get(11).text();
-//                case RUB -> currencyPair.get(24).text() + ":  " + values.get(24).text();
-//                case TRY -> currencyPair.get(29).text() + ":  " + values.get(29).text();
-//                case UAH -> currencyPair.get(31).text() + ":  " + values.get(31).text();
-//                case NIGGER -> "NIGGER / KZT:  0,032";
-//            };
-//
-//        } catch (IllegalArgumentException e) {
-//            return "Incorrect currency";
-//        }
-//    }
-
     public String getCurrency(String messageText) {
         for (int i = 0; i < 39; i++) {
             String currentCurrency = currencyPair.get(i).text().substring(0, 3);
@@ -59,10 +40,5 @@ public class CurrencyParserService {
             }
         }
         return "Incorrect currency";
-    }
-
-    public static void main(String[] args) throws IOException {
-        CurrencyParserService parserService = new CurrencyParserService();
-//        System.out.println(parserService.getCurrencyTest("irr"));
     }
 }
