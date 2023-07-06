@@ -18,27 +18,36 @@ public class CurrencyParserService {
     }
 
     public String getCurrency(String messageText) {
+        StringBuilder resultBuilder = new StringBuilder();
+
         for (int i = 0; i < 39; i++) {
             String currentCurrency = currencyPair.get(i).text().substring(0, 3);
+
             if (currentCurrency.equals(messageText.toUpperCase())) {
-                if (currentCurrency.startsWith("AMD") ||
-                        currentCurrency.startsWith("HUF")) {
-                    float calculatedCurrency = Float.parseFloat(values.get(i).text()) / 10;
-                    return "<b>" + currencyPair.get(i).text() + "</b>:  " + String.format("%.2f", calculatedCurrency);
-                }
-                else if (currentCurrency.startsWith("IRR")) {
-                    float calculatedCurrency = Float.parseFloat(values.get(i).text()) / 1000;
-                    return "<b>" + currencyPair.get(i).text() + "</b>:  " + String.format("%.4f", calculatedCurrency);
-                }
-                else if (currentCurrency.startsWith("UZS") ||
-                        currentCurrency.startsWith("KRW")) {
-                    float calculatedCurrency = Float.parseFloat(values.get(i).text()) / 100;
-                    return "<b>" + currencyPair.get(i).text() + "</b>:  " + String.format("%.3f", calculatedCurrency);
+                float calculatedCurrency = Float.parseFloat(values.get(i).text());
+                String formattedCurrency;
+
+                switch (currentCurrency) {
+                    case "AMD", "HUF" -> {
+                        calculatedCurrency /= 10;
+                        formattedCurrency = String.format("%.2f", calculatedCurrency);
+                    }
+                    case "IRR" -> {
+                        calculatedCurrency /= 1000;
+                        formattedCurrency = String.format("%.4f", calculatedCurrency);
+                    }
+                    case "UZS", "KRW" -> {
+                        calculatedCurrency /= 100;
+                        formattedCurrency = String.format("%.3f", calculatedCurrency);
+                    }
+                    default -> formattedCurrency = values.get(i).text();
                 }
 
-                return "<b>" + currencyPair.get(i).text() + "</b>:  " + values.get(i).text();
+                resultBuilder.append("<b>").append(currencyPair.get(i).text()).append("</b>:  ").append(formattedCurrency);
+                return resultBuilder.toString();
             }
         }
-        return "Incorrect currency";
+
+        return "Incorrect currency"; // or any other appropriate value if no match is found
     }
 }
