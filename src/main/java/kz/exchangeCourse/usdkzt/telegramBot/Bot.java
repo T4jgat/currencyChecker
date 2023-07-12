@@ -7,13 +7,15 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
 
 @Component
 @AllArgsConstructor
-public class Bot extends TelegramLongPollingBot {
+public class Bot extends TelegramLongPollingBot implements IBot {
     private final BotConfig botConfig;
-
+    BotConfig.mPage pages;
 
     @Override
     public String getBotUsername() {
@@ -29,24 +31,52 @@ public class Bot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
 
-        String currency = "";
+        KeyboardMarkups keyboardMarkup;
+        String[][][] keyboardLayout = new String[][][]{
+                {
+                        {"USD", "RUB", "TRY", "UAH", "PLN"},
+                        {"EUR", "BYN", "GBP", "UZS", "AZN"},
+                        {"AMD", "BRL", "HUF", "HKD", "next >>"}
+                },
+                {
+                        {"<< prev", "GEL", "DKK", "AED", "INR"},
+                        {"IRR", "CAD", "CNY", "KWD", "KGS"},
+                        {"MYR", "MXN", "MDL", "NOK", "next >>"}
+                },
+                {
+                        {"<< prev", "PLN", "SAR", "SGD", "TJS"},
+                        {"THB", "CZK", "SEK", "CHF", "ZAR"},
+                        {"KRW", "JPY"}
+                }
+        };
 
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
             CurrencyParserService currencyParserService = new CurrencyParserService();
 
-            switch (messageText) {
-                case "/start" -> startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-                default -> {
-                    currency = currencyParserService.getCurrency(messageText);
-                    sendMessage(chatId, currency);
-                }
+            if (messageText.equals("/start")) {
+                keyboardMarkup = new KeyboardMarkups(thisPage(keyboardLayout));
+                startCommandReceived(chatId, update.getMessage().getChat().getFirstName(), keyboardMarkup.setKeyboardMarkup());
             }
+            else if (messageText.equals("next >>")) {
+                keyboardMarkup = new KeyboardMarkups(nextPageShift(keyboardLayout));
+                sendMessageWithKeyboard(chatId, "next page", keyboardMarkup.setKeyboardMarkup());
+            }
+            else if (messageText.equals("<< prev")) {
+                keyboardMarkup = new KeyboardMarkups(prevPageShift(keyboardLayout));
+                sendMessageWithKeyboard(chatId, "previous page", keyboardMarkup.setKeyboardMarkup());
+            } else {
+                keyboardMarkup = new KeyboardMarkups(thisPage(keyboardLayout));
+                sendMessageWithKeyboard(chatId, currencyParserService.getCurrency(messageText), keyboardMarkup.setKeyboardMarkup());
+            }
+
+
         }
     }
 
-    private void startCommandReceived(Long chatId, String name) {
+    private void startCommandReceived(Long chatId, String name, ReplyKeyboardMarkup keyboardMarkup) {
+
         String answer =
                 "Hi, " + name +
                         """
@@ -96,19 +126,81 @@ public class Bot extends TelegramLongPollingBot {
                 <b>KRW</b> - South Korean Won
                 <b>JPY</b> - Japanese Yen""";
 
-        sendMessage(chatId, answer);
-        sendMessage(chatId, availableRates);
+        sendMessageWithoutKeyboard(chatId, answer);
+        sendMessageWithKeyboard(chatId, availableRates, keyboardMarkup);
     }
 
-    private void sendMessage(Long chatId, String textToSend) {
+
+    @Override
+    public void sendMessageWithoutKeyboard(Long chatId, String textToSend) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(textToSend);
         sendMessage.enableHtml(true);
+
         try {
             execute(sendMessage);
-        } catch (TelegramApiException ignored) {
+        } catch (TelegramApiException ignored) {}
+    }
 
-        }
+    @Override
+    public void sendMessageWithKeyboard(Long chatId, String textToSend, ReplyKeyboardMarkup thisKeyboardMarkup) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(String.valueOf(chatId));
+        sendMessage.setText(textToSend);
+        sendMessage.enableHtml(true);
+        sendMessage.setReplyMarkup(thisKeyboardMarkup);
+
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException ignored) {}
+    }
+
+    @Override
+    public String[][] nextPageShift(String[][][] keyboardLayout) {
+        String[][] currencyList;
+
+        pages = switch (pages) {
+            case FIRST_PAGE -> BotConfig.mPage.SECONG_PAGE;
+            case SECONG_PAGE -> BotConfig.mPage.THIRD_PAGE;
+            case THIRD_PAGE -> BotConfig.mPage.FIRST_PAGE;
+        };
+
+
+        currencyList = switch (pages) {
+            case FIRST_PAGE -> keyboardLayout[0];
+            case SECONG_PAGE -> keyboardLayout[1];
+            case THIRD_PAGE -> keyboardLayout[2];
+        };
+
+        return currencyList;
+    }
+
+    public String[][] thisPage(String[][][] keyboardLayout) {
+        return switch (pages) {
+            case FIRST_PAGE -> keyboardLayout[0];
+            case SECONG_PAGE -> keyboardLayout[1];
+            case THIRD_PAGE -> keyboardLayout[2];
+        };
+    }
+
+    @Override
+    public String[][] prevPageShift(String[][][] keyboardLayout) {
+        String[][] currencyList;
+
+        pages = switch (pages) {
+            case FIRST_PAGE -> BotConfig.mPage.THIRD_PAGE;
+            case SECONG_PAGE ->BotConfig.mPage.FIRST_PAGE;
+            case THIRD_PAGE -> BotConfig.mPage.SECONG_PAGE;
+        };
+
+        currencyList = switch (pages) {
+            case FIRST_PAGE -> keyboardLayout[0];
+            case SECONG_PAGE -> keyboardLayout[1];
+            case THIRD_PAGE -> keyboardLayout[2];
+        };
+
+        return currencyList;
+
     }
 }
