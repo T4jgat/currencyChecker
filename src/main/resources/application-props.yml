@@ -1,0 +1,4 @@
+spring:
+  tg_config:
+    name: ${PROD_BOT_USERNAME}
+    token: ${PROD_BOT_TOKEN}
