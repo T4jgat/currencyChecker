@@ -8,11 +8,11 @@ import org.springframework.context.annotation.PropertySource;
 
 @Configuration
 @Data
-@PropertySource("classpath:application-props.yml")
+@PropertySource("classpath:application.properties")
 public class BotConfig {
-    @Value("${spring.tg_config.name}")
+    @Value("${bot.mame}")
     String botName;
-    @Value("${spring.tg_config.token}")
+    @Value("${bot.token}")
     String token;
 
     @Bean
